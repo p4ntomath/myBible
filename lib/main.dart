@@ -55,16 +55,6 @@ Future<void> updateDailySong() async {
 
 bool isYesterdayOrBefore(DateTime dateTime) {
   DateTime today = DateTime.now();
-  DateTime yesterday = today.subtract(Duration(days: 1));
-
-  // Check if dateTime is before yesterday or is yesterday
-  if (dateTime.isBefore(yesterday) || dateTime.isAtSameMomentAs(yesterday)) {
-    return true;
-  }
-  // Check if dateTime is today
-  if (dateTime.isAtSameMomentAs(today)) {
-    return false;
-  }
-  // If dateTime is after today
-  return false;
+  return dateTime.isBefore(DateTime(today.year, today.month, today.day));
 }
+
