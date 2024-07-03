@@ -1,8 +1,9 @@
-// ignore_for_file: deprecated_member_use, prefer_const_constructors, use_super_parameters, prefer_const_literals_to_create_immutables, avoid_print
+// ignore_for_file: deprecated_member_use, prefer_const_constructors, use_super_parameters, prefer_const_literals_to_create_immutables, avoid_print, non_constant_identifier_names, unused_element
 
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart'; // Import url_launcher package
-import '../data/songs.dart'; // Adjust the import path as per your project structure
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../data/songs.dart';
 
 class SongCard extends StatelessWidget {
   final Track track;
@@ -68,9 +69,13 @@ class SongCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(FontAwesomeIcons.spotify, size: 30, color: Colors.green),
+              GestureDetector(
+                onTap: () async { await _launchSpotify(); },
+                child: Icon(FontAwesomeIcons.spotify, size: 30, color: Colors.green)),
               SizedBox(width: 20),
-              Icon(FontAwesomeIcons.youtube, size: 30, color: Colors.red),
+              GestureDetector(
+                onTap:() async { await _launchYoutube(); },
+                child: Icon(FontAwesomeIcons.youtube, size: 30, color: Colors.red)),
             ],
           ),
           SizedBox(height: 16),
@@ -79,7 +84,25 @@ class SongCard extends StatelessWidget {
     );
   }
 
-  // Async function to open Spotify link
+  Future<void> _launchSpotify() async {
+    String url = "https://open.spotify.com/search/${track.trackName} ${track.artistName}";
+    Uri uri = Uri.parse(url);
+    if (!await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    )) {
+      throw Exception('Could not launch $url');
+    }
+  }
 
-
+  Future<void> _launchYoutube() async {
+    String url = "https://www.youtube.com/results?search_query=${track.trackName}+${track.artistName}";
+    Uri uri = Uri.parse(url);
+    if (!await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    )) {
+      throw Exception('Could not launch $url');
+    }
+  }
 }

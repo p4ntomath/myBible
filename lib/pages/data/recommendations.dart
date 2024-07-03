@@ -1,13 +1,12 @@
-// ignore_for_file: use_key_in_widget_constructors, library_private_types_in_public_api, prefer_const_constructors
+// ignore_for_file: prefer_const_constructors, library_private_types_in_public_api, use_key_in_widget_constructors
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'songs.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 const String clientId = 'bd52ae0dda914329b1a8c088f8b15a41';
 const String clientSecret = 'e89e20bec02a4e898ff44cf523345580';
-
 
 class RecommendationsWidget extends StatefulWidget {
   final String artistName;
@@ -20,7 +19,9 @@ class RecommendationsWidget extends StatefulWidget {
 }
 
 class _RecommendationsWidgetState extends State<RecommendationsWidget> {
-  late Future<List<Track>> _recommendationsFuture;
+  late Future<List<Song>> _recommendationsFuture;
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  String? _currentPlayingUrl;
 
   @override
   void initState() {
@@ -28,18 +29,24 @@ class _RecommendationsWidgetState extends State<RecommendationsWidget> {
     _recommendationsFuture = fetchRecommendations();
   }
 
-  Future<List<Track>> fetchRecommendations() async {
+  Future<List<Song>> fetchRecommendations() async {
     final String accessToken = await getAccessToken();
-    final String trackId = await getTrackId(accessToken, widget.trackName, widget.artistName);
-    final List<Track> recommendations = await getRecommendations(accessToken, trackId);
+    final String trackId =
+        await getTrackId(accessToken, widget.trackName, widget.artistName);
+    final List<Song> recommendations =
+        await getRecommendations(accessToken, trackId);
     return recommendations;
   }
 
   Future<String> getAccessToken() async {
-    final String authHeader = base64Encode(utf8.encode('$clientId:$clientSecret'));
+    final String authHeader =
+        base64Encode(utf8.encode('$clientId:$clientSecret'));
     final response = await http.post(
       Uri.parse('https://accounts.spotify.com/api/token'),
-      headers: {'Authorization': 'Basic $authHeader'},
+      headers: {
+        'Authorization': 'Basic $authHeader',
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
       body: {'grant_type': 'client_credentials'},
     );
     if (response.statusCode == 200) {
@@ -50,9 +57,11 @@ class _RecommendationsWidgetState extends State<RecommendationsWidget> {
     }
   }
 
-  Future<String> getTrackId(String accessToken, String trackName, String artistName) async {
+  Future<String> getTrackId(
+      String accessToken, String trackName, String artistName) async {
     final response = await http.get(
-      Uri.parse('https://api.spotify.com/v1/search?q=track:$trackName%20artist:$artistName&type=track&limit=1'),
+      Uri.parse(
+          'https://api.spotify.com/v1/search?q=track:$trackName%20artist:$artistName&type=track&limit=1'),
       headers: {'Authorization': 'Bearer $accessToken'},
     );
     if (response.statusCode == 200) {
@@ -68,23 +77,46 @@ class _RecommendationsWidgetState extends State<RecommendationsWidget> {
     }
   }
 
-  Future<List<Track>> getRecommendations(String accessToken, String trackId) async {
+  Future<List<Song>> getRecommendations(
+      String accessToken, String trackId) async {
     final response = await http.get(
       Uri.parse('https://api.spotify.com/v1/recommendations?seed_tracks=$trackId&limit=20'),
       headers: {'Authorization': 'Bearer $accessToken'},
     );
     if (response.statusCode == 200) {
-      final Map<String, dynamic> recommendations = json.decode(response.body);
+      final Map<String, dynamic> recommendations =
+          json.decode(response.body);
       return (recommendations['tracks'] as List)
-          .map((track) => Track(
-                trackName: track['name'],
-                artistName: track['artists'][0]['name'],
-                albumImageUrl: track['album']['images'][0]['url'] ?? '',
+          .map((track) => Song(
+                title: track['name'],
+                artist: track['artists'][0]['name'],
+                imageUrl: track['album']['images'][0]['url'] ?? '',
+                previewUrl: track['preview_url'],
               ))
           .toList();
     } else {
       throw Exception('Failed to retrieve recommendations');
     }
+  }
+
+  void playPreview(String url) async {
+    if (_currentPlayingUrl == url) {
+      await _audioPlayer.stop();
+      setState(() {
+        _currentPlayingUrl = null;
+      });
+    } else {
+      await _audioPlayer.play(UrlSource(url));
+      setState(() {
+        _currentPlayingUrl = url;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _audioPlayer.dispose();
+    super.dispose();
   }
 
   @override
@@ -96,32 +128,66 @@ class _RecommendationsWidgetState extends State<RecommendationsWidget> {
         centerTitle: true,
       ),
       body: Center(
-      child: FutureBuilder<List<Track>>(
-        future: _recommendationsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return CircularProgressIndicator();
-          } else if (snapshot.hasError) {
-            return Text('Error: ${snapshot.error}');
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return Text('No recommendations found');
-          } else {
-            final recommendations = snapshot.data!;
-            return ListView.builder(
-              itemCount: recommendations.length,
-              itemBuilder: (context, index) {
-                final track = recommendations[index];
-                return ListTile(
-                  title: Text(track.trackName),
-                  subtitle: Text(track.artistName),
-                  leading: Image.network(track.albumImageUrl),
-                );
-              },
-            );
-          }
-        },
+        child: FutureBuilder<List<Song>>(
+          future: _recommendationsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return CircularProgressIndicator();
+            } else if (snapshot.hasError) {
+              return Text('Error: ${snapshot.error}');
+            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              return Text('No recommendations found');
+            } else {
+              final recommendations = snapshot.data!;
+              return ListView.builder(
+                itemCount: recommendations.length,
+                itemBuilder: (context, index) {
+                  final song = recommendations[index];
+                  return ListTile(
+                    title: Text(song.title),
+                    subtitle: Text(song.artist),
+                    leading: Image.network(song.imageUrl),
+                    trailing: IconButton(
+                      icon: Icon(
+                        _currentPlayingUrl == song.previewUrl
+                            ? Icons.stop
+                            : Icons.play_arrow,
+                      ),
+                      onPressed: () async {
+                        if (_currentPlayingUrl == song.previewUrl) {
+                          await _audioPlayer.stop();
+                          setState(() {
+                            _currentPlayingUrl = null;
+                          });
+                        } else {
+                          await _audioPlayer.play(UrlSource(song.previewUrl!)); // Use isLocal: false for remote URLs
+                          setState(() {
+                            _currentPlayingUrl = song.previewUrl;
+                          });
+                        }
+                      },
+                    ),
+                  );
+                },
+              );
+            }
+          },
+        ),
       ),
-    ),
     );
   }
+}
+
+class Song {
+  final String title;
+  final String artist;
+  final String imageUrl;
+  final String? previewUrl;
+
+  Song({
+    required this.title,
+    required this.artist,
+    required this.imageUrl,
+    this.previewUrl,
+  });
 }
