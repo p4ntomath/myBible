@@ -2,8 +2,6 @@
 
 import 'dart:io';
 import 'dart:typed_data';
-
-import 'package:awesome_snackbar_content/awesome_snackbar_content.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -156,37 +154,4 @@ class DailyVerse extends StatelessWidget {
     await Share.shareFiles([image.path]);
   }
 
-  void showSuccessSnackbar(BuildContext context, String path) {
-    final snackBar = SnackBar(
-      content: AwesomeSnackbarContent(
-        title: 'Success',
-        message: 'Image Saved Successfully At $path',
-        contentType: ContentType.success,
-      ),
-      backgroundColor: Colors.transparent,
-      behavior: SnackBarBehavior.floating,
-      elevation: 0,
-    );
-
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(snackBar);
-  }
-
-  void showErrorSnackbar(BuildContext context) {
-    final snackBar = SnackBar(
-      content: AwesomeSnackbarContent(
-        title: 'Error',
-        message: 'Failed To Save Image',
-        contentType: ContentType.failure,
-      ),
-      backgroundColor: Colors.transparent,
-      behavior: SnackBarBehavior.floating,
-      elevation: 0,
-    );
-
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(snackBar);
-  }
 }

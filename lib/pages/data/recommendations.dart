@@ -2,11 +2,12 @@
 
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:audioplayers/audioplayers.dart';
 
-const String clientId = 'bd52ae0dda914329b1a8c088f8b15a41';
-const String clientSecret = 'e89e20bec02a4e898ff44cf523345580';
+String clientId = '${dotenv.env['CLIENTID']}';
+String clientSecret = '${dotenv.env['CLIENTSECRET']}';
 
 class RecommendationsWidget extends StatefulWidget {
   final String artistName;

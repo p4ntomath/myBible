@@ -1,11 +1,13 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, avoid_unnecessary_containers, avoid_print, unused_local_variable
 
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/Homepage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName :"secret.env");
   await updateDailySong();
   runApp(MyApp());
 }
@@ -55,16 +57,5 @@ Future<void> updateDailySong() async {
 
 bool isYesterdayOrBefore(DateTime dateTime) {
   DateTime today = DateTime.now();
-  DateTime yesterday = today.subtract(Duration(days: 1));
-
-  // Check if dateTime is before yesterday or is yesterday
-  if (dateTime.isBefore(yesterday) || dateTime.isAtSameMomentAs(yesterday)) {
-    return true;
-  }
-  // Check if dateTime is today
-  if (dateTime.isAtSameMomentAs(today)) {
-    return false;
-  }
-  // If dateTime is after today
-  return false;
+  return dateTime.isBefore(DateTime(today.year, today.month, today.day));
 }
