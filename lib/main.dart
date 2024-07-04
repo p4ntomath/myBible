@@ -59,3 +59,4 @@ bool isYesterdayOrBefore(DateTime dateTime) {
   DateTime today = DateTime.now();
   return dateTime.isBefore(DateTime(today.year, today.month, today.day));
 }
+
