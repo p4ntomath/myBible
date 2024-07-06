@@ -1,6 +1,6 @@
 # bible
 
-This is a bible app i created when learning flutter, please do play with it
+A new Flutter project.
 
 ## Getting Started
 

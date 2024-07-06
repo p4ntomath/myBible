@@ -55,8 +55,9 @@ Future<void> updateDailySong() async {
   }
 }
 
-bool isYesterdayOrBefore(DateTime dateTime) {
-  DateTime today = DateTime.now();
-  return dateTime.isBefore(DateTime(today.year, today.month, today.day));
+bool isYesterdayOrBefore(DateTime date) {
+  DateTime now = DateTime.now();
+  DateTime normalizedNow = DateTime(now.year, now.month, now.day);
+  DateTime normalizedDate = DateTime(date.year, date.month, date.day);
+  return normalizedDate.isBefore(normalizedNow);
 }
-
