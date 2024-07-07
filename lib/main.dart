@@ -7,7 +7,7 @@ import 'pages/Homepage.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName :"secret.env");
+  await dotenv.load(fileName: "secret.env");
   await updateDailySong();
   runApp(MyApp());
 }
@@ -34,24 +34,18 @@ Future<void> updateDailySong() async {
 
   if (prefs.containsKey(key)) {
     DateTime last = DateTime.parse(prefs.getString(key)!);
+    print(prefs.getString(key));
 
     if (isYesterdayOrBefore(last)) {
       String dayKey = "dailyIndex";
-
-      if (prefs.containsKey(dayKey)) {
-        int ind = prefs.getInt(dayKey)!;
-
-        if (ind + 1 == 100) {
-          ind = 0;
-        }
-
-        prefs.setInt(dayKey, ind + 1);
-      } else {
-        prefs.setInt(dayKey, 0);
-      }
+      int ind = prefs.getInt(dayKey) ?? -1;
+      ind = (ind + 1) % 100; // Cycle through 0 to 99
+      prefs.setInt(dayKey, ind);
+      prefs.setString(key, now.toIso8601String()); // Update lastSongUpdate to now
     }
   } else {
     prefs.setString(key, now.toIso8601String());
+    prefs.setInt('dailyIndex', 0); // Initialize dailyIndex if it doesn't exist
   }
 }
 
