@@ -30,28 +30,31 @@ class MyApp extends StatelessWidget {
 Future<void> updateDailySong() async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
   DateTime now = DateTime.now();
+  DateTime initialDate = DateTime(2024, 7, 1);
   String key = 'lastSongUpdate';
+  String dailyIndexKey = "dailyIndex";
 
   if (prefs.containsKey(key)) {
-    DateTime last = DateTime.parse(prefs.getString(key)!);
-    print(prefs.getString(key));
+    DateTime lastUpdateDate = DateTime.parse(prefs.getString(key)!);
+    int index = daysPassed(lastUpdateDate);
 
-    if (isYesterdayOrBefore(last)) {
-      String dayKey = "dailyIndex";
-      int ind = prefs.getInt(dayKey) ?? -1;
-      ind = (ind + 1) % 100; // Cycle through 0 to 99
-      prefs.setInt(dayKey, ind);
-      prefs.setString(key, now.toIso8601String()); // Update lastSongUpdate to now
+    if (index >= 100) {
+      // Reset logic: set new initial date to current date and reset index
+      prefs.setString(key, now.toIso8601String());
+      index = daysPassed(now); // This should be 0 since the date is reset to now
     }
+
+    prefs.setInt(dailyIndexKey, index % 100); // Ensure the index is always between 0-99
   } else {
-    prefs.setString(key, now.toIso8601String());
-    prefs.setInt('dailyIndex', 0); // Initialize dailyIndex if it doesn't exist
+    prefs.setString(key, initialDate.toIso8601String());
+    int index = daysPassed(initialDate);
+    prefs.setInt(dailyIndexKey, index % 100); // Ensure the index is always between 0-99
   }
 }
 
-bool isYesterdayOrBefore(DateTime date) {
+int daysPassed(DateTime initialDate) {
   DateTime now = DateTime.now();
   DateTime normalizedNow = DateTime(now.year, now.month, now.day);
-  DateTime normalizedDate = DateTime(date.year, date.month, date.day);
-  return normalizedDate.isBefore(normalizedNow);
+  DateTime normalizedInitialDate = DateTime(initialDate.year, initialDate.month, initialDate.day);
+  return normalizedNow.difference(normalizedInitialDate).inDays;
 }
